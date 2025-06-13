@@ -152,15 +152,38 @@ WHERE DATE(fecha) BETWEEN '2025-06-01' AND '2025-06-03';
 
 -- Ganancias
 SELECT c.nombre AS cliente,
-SUM(m.costo_alquiler_mensual) AS total_alquiler,
-SUM(r.cantidad_usada * i.precio_unitario) AS total_insumos,
-SUM(m.costo_alquiler_mensual + r.cantidad_usada * i.precio_unitario) AS ganancias_totales
+    (
+           SELECT SUM(m.costo_alquiler_mensual)
+           FROM Obligatorio.maquinas m
+           WHERE m.id_cliente = c.id
+    ) AS total_alquiler,
+
+    (
+        SELECT SUM(r.cantidad_usada * i.precio_unitario)
+        FROM Obligatorio.maquinas m
+        LEFT JOIN Obligatorio.registro_consumo r ON r.id_maquina = m.id
+        LEFT JOIN Obligatorio.insumos i ON r.id_insumo = i.id
+        WHERE m.id_cliente = c.id
+    ) AS total_insumos,
+    COALESCE(
+        (
+          SELECT SUM(m.costo_alquiler_mensual)
+          FROM Obligatorio.maquinas m
+          WHERE m.id_cliente = c.id
+        ), 0
+    )
+    +
+    COALESCE(
+        (
+        SELECT SUM(r.cantidad_usada * i.precio_unitario)
+        FROM Obligatorio.maquinas m
+        LEFT JOIN Obligatorio.registro_consumo r ON r.id_maquina = m.id
+        LEFT JOIN Obligatorio.insumos i ON r.id_insumo = i.id
+        WHERE m.id_cliente = c.id
+        ), 0
+  ) AS total_ganancias
 FROM Obligatorio.clientes c
-JOIN Obligatorio.maquinas m ON c.id = m.id_cliente
-LEFT JOIN Obligatorio.registro_consumo r ON r.id_maquina = m.id
-LEFT JOIN Obligatorio.insumos i ON r.id_insumo = i.id
-GROUP BY c.id
-ORDER BY ganancias_totales DESC;
+ORDER BY total_alquiler + total_insumos DESC;
 
 -- Insumos más usados
 SELECT i.descripcion,
