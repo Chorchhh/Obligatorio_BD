@@ -26,7 +26,7 @@ app.config['JWT_SECRET_KEY'] = 'cafes-marloy-secret-key-2025'  # Cambiar en prod
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 # Configurar CORS y JWT
-CORS(app, origins=['http://localhost:3000'])
+CORS(app, origins=['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'])
 jwt = JWTManager(app)
 
 # Configuración de base de datos
