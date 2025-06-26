@@ -213,3 +213,77 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Frontend (React)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Backend (Python)
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.Python
+backend/env/
+backend/pip-log.txt
+backend/pip-delete-this-directory.txt
+backend/.tox/
+backend/.coverage
+backend/.pytest_cache/
+backend/.env
+
+# Base de datos
+*.sql.bak
+*.sql.backup
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de configuración sensibles
+config.json
+secrets.json
+.env
+.env.local
+.env.production
+
+# Certificados y claves
+*.pem
+*.key
+*.cert
+*.crt
+
+# Archivos de respaldo
+*.bak
+*.backup
+*.old
