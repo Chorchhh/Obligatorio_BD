@@ -1,6 +1,7 @@
 # ✅ Estado del Proyecto - Sistema Cafés Marloy
 
 **Fecha**: Junio 2025 
+
 **Estado**: ✅ **COMPLETAMENTE FUNCIONAL**
 
 ## 🎯 Resumen
