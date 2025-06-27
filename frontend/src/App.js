@@ -12,6 +12,7 @@ import Navbar from "./components/Layout/Navbar";
 
 // Páginas
 import Login from "./components/Auth/Login";
+import Register from "./components/Auth/Register";
 import Dashboard from "./components/Dashboard/Dashboard";
 import Clientes from "./components/Pages/Clientes";
 import Proveedores from "./components/Pages/Proveedores";
@@ -29,6 +30,9 @@ function App() {
           <Routes>
             {/* Ruta de login */}
             <Route path="/login" element={<Login />} />
+
+            {/* Ruta de registro */}
+            <Route path="/register" element={<Register />} />
 
             {/* Rutas protegidas */}
             <Route

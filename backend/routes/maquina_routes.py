@@ -9,7 +9,7 @@ maquina_bp = Blueprint('maquina', __name__)
 def get_db_connection():
     try:
         return mysql.connector.connect(
-            host='localhost', database='Obligatorio', user='root', password='',
+            host='localhost', database='Obligatorio', user='root', password='rootroot',
             charset='utf8', collation='utf8_spanish_ci'
         )
     except Error as e:

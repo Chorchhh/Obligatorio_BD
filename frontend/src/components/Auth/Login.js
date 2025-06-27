@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Coffee, Mail, Lock, LogIn } from "lucide-react";
 import toast from "react-hot-toast";
@@ -160,6 +160,22 @@ const Login = () => {
           >
             🏢 Cliente
           </button>
+        </div>
+
+        <div className="text-center" style={{ marginTop: "20px" }}>
+          <p style={{ color: "#6b7280", fontSize: "14px" }}>
+            ¿No tienes una cuenta?{" "}
+            <Link
+              to="/register"
+              style={{
+                color: "#8B4513",
+                textDecoration: "none",
+                fontWeight: "500",
+              }}
+            >
+              Regístrate aquí
+            </Link>
+          </p>
         </div>
 
         <div

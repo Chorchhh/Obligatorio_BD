@@ -5,15 +5,8 @@ from mysql.connector import Error
 
 insumo_bp = Blueprint('insumo', __name__)
 
-def get_db_connection():
-    try:
-        return mysql.connector.connect(
-            host='localhost', database='Obligatorio', user='root', password='',
-            charset='utf8', collation='utf8_spanish_ci'
-        )
-    except Error as e:
-        print(f"Error: {e}")
-        return None
+# Usar configuración centralizada
+from config import get_db_connection
 
 @insumo_bp.route('', methods=['GET'])
 @jwt_required()

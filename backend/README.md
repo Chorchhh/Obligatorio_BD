@@ -256,7 +256,3 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ## 📄 Licencia
 
 Este proyecto es parte del trabajo obligatorio de Bases de Datos I - UCU - 2025.
-
-## 👨‍💻 Desarrollado por
-
-Proyecto desarrollado para el curso de Bases de Datos I - Universidad Católica del Uruguay - 2025.

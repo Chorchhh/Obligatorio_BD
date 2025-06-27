@@ -9,6 +9,9 @@ from datetime import timedelta, datetime
 from functools import wraps
 import traceback
 
+# Importar configuración PRIMERO
+from config import DB_CONFIG, SERVER_CONFIG, JWT_SECRET, CORS_ORIGINS, print_config_summary, get_db_connection
+
 # Importar rutas
 from routes.auth_routes import auth_bp
 from routes.cliente_routes import cliente_bp
@@ -22,31 +25,15 @@ from routes.reporte_routes import reporte_bp
 
 # Configurar Flask
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'cafes-marloy-secret-key-2025'  # Cambiar en producción
+app.config['JWT_SECRET_KEY'] = JWT_SECRET
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 # Configurar CORS y JWT
-CORS(app, origins=['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'])
+CORS(app, origins=CORS_ORIGINS)
 jwt = JWTManager(app)
 
-# Configuración de base de datos
-DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'Obligatorio',
-    'user': 'root',
-    'password': '',  # Ajustar según configuración local
-    'charset': 'utf8',
-    'collation': 'utf8_spanish_ci'
-}
 
-def get_db_connection():
-    """Obtener conexión a la base de datos"""
-    try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        return connection
-    except Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
+
 
 def require_admin(f):
     """Decorador para rutas que requieren permisos de administrador"""
@@ -139,6 +126,7 @@ def handle_exception(e):
 
 if __name__ == '__main__':
     print("🚀 Iniciando servidor de Cafés Marloy...")
-    print("📊 Dashboard disponible en: http://localhost:5000/api/health")
-    print("🔑 Endpoints de autenticación: http://localhost:5000/api/auth/")
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    print_config_summary()
+    print("📊 Dashboard disponible en: http://localhost:{}/api/health".format(SERVER_CONFIG['port']))
+    print("🔑 Endpoints de autenticación: http://localhost:{}/api/auth/".format(SERVER_CONFIG['port']))
+    app.run(debug=SERVER_CONFIG['debug'], host=SERVER_CONFIG['host'], port=SERVER_CONFIG['port']) 

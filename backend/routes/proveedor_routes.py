@@ -13,7 +13,7 @@ def get_db_connection():
             host='localhost',
             database='Obligatorio',
             user='root',
-            password='',
+            password='rootroot',
             charset='utf8',
             collation='utf8_spanish_ci'
         )

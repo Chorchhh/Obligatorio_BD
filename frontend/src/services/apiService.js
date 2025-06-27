@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+  process.env.REACT_APP_API_URL || "http://localhost:5001/api";
 
 class ApiService {
   constructor() {
@@ -37,6 +37,10 @@ class ApiService {
   // Autenticación
   login(correo, contraseña) {
     return this.api.post("/auth/login", { correo, contraseña });
+  }
+
+  register(userData) {
+    return this.api.post("/auth/register", userData);
   }
 
   // Proveedores

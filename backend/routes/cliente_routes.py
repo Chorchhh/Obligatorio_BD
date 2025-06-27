@@ -5,21 +5,8 @@ from mysql.connector import Error
 
 cliente_bp = Blueprint('cliente', __name__)
 
-def get_db_connection():
-    """Obtener conexión a la base de datos"""
-    try:
-        connection = mysql.connector.connect(
-            host='localhost',
-            database='Obligatorio',
-            user='root',
-            password='',
-            charset='utf8',
-            collation='utf8_spanish_ci'
-        )
-        return connection
-    except Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
+# Usar configuración centralizada
+from config import get_db_connection
 
 @cliente_bp.route('', methods=['GET'])
 @jwt_required()
