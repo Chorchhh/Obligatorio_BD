@@ -124,5 +124,5 @@ python3 diagnostico.py
 
 ---
 
-**Implementación por**: Valentín Rodriguez (ValeRodMa)  
+**Implementación por**: Jorge Mendez, Felipe Heredia, Valentin Rodríguez 
 **Curso**: Bases de Datos I - UCU 2025 
