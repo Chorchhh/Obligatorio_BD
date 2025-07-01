@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - Sistema Cafés Marloy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-bar-chart text-warning"></i>
+            Reportes y Estadísticas
+        </h1>
+    </div>
+</div>
+
+<!-- Menú de reportes -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list"></i> Reportes Disponibles
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <button class="list-group-item list-group-item-action" onclick="mostrarReporte('total-mensual')">
+                    <i class="bi bi-calendar-month"></i> Total Mensual por Cliente
+                </button>
+                <button class="list-group-item list-group-item-action" onclick="mostrarReporte('insumos-usados')">
+                    <i class="bi bi-graph-up"></i> Insumos Más Usados
+                </button>
+                <button class="list-group-item list-group-item-action"
+                    onclick="mostrarReporte('tecnicos-mantenimientos')">
+                    <i class="bi bi-person-gear"></i> Técnicos con Más Mantenimientos
+                </button>
+                <button class="list-group-item list-group-item-action" onclick="mostrarReporte('clientes-maquinas')">
+                    <i class="bi bi-cpu"></i> Clientes con Más Máquinas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="card" id="contenedorReporte">
+            <div class="card-body text-center">
+                <i class="bi bi-pie-chart-fill fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">Selecciona un reporte del menú lateral</h4>
+                <p class="text-muted">Los reportes te ayudarán a analizar el rendimiento del negocio</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let reporteActual = null;
+
+    function mostrarReporte(tipoReporte) {
+        // Marcar botón activo
+        document.querySelectorAll('.list-group-item').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        reporteActual = tipoReporte;
+
+        switch (tipoReporte) {
+            case 'total-mensual':
+                mostrarReporteTotalMensual();
+                break;
+            case 'insumos-usados':
+                mostrarReporteInsumosUsados();
+                break;
+            case 'tecnicos-mantenimientos':
+                mostrarReporteTecnicosMantenimientos();
+                break;
+            case 'clientes-maquinas':
+                mostrarReporteClientesMaquinas();
+                break;
+        }
+    }
+
+    function mostrarReporteTotalMensual() {
+        const contenedor = document.getElementById('contenedorReporte');
+        contenedor.innerHTML = `
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-calendar-month"></i> Total Mensual por Cliente
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="mesReporte" class="form-label">Seleccionar Mes:</label>
+                    <input type="month" class="form-control" id="mesReporte" 
+                           value="${new Date().toISOString().slice(0, 7)}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-primary" onclick="cargarReporteTotalMensual()">
+                        <i class="bi bi-search"></i> Generar Reporte
+                    </button>
+                </div>
+            </div>
+            <div id="resultadoTotalMensual">
+                <p class="text-muted text-center">Selecciona un mes y haz clic en "Generar Reporte"</p>
+            </div>
+        </div>
+    `;
+    }
+
+    async function cargarReporteTotalMensual() {
+        const mes = document.getElementById('mesReporte').value;
+        if (!mes) {
+            mostrarAlerta('Por favor selecciona un mes', 'warning');
+            return;
+        }
+
+        const resultado = document.getElementById('resultadoTotalMensual');
+        resultado.innerHTML = '<div class="text-center"><div class="spinner-border text-primary"></div></div>';
+
+        try {
+            const response = await fetch(`/api/reportes/total-mensual/${mes}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error cargando reporte');
+            }
+
+            if (data.length === 0) {
+                resultado.innerHTML = '<p class="text-muted text-center">No hay datos para el mes seleccionado</p>';
+                return;
+            }
+
+            let totalGeneral = 0;
+            const tablaHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Alquiler</th>
+                            <th>Consumo</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(item => {
+                totalGeneral += item.total;
+                return `
+                                <tr>
+                                    <td><strong>${item.cliente}</strong></td>
+                                    <td>${formatearMoneda(item.alquiler)}</td>
+                                    <td>${formatearMoneda(item.consumo)}</td>
+                                    <td><strong>${formatearMoneda(item.total)}</strong></td>
+                                </tr>
+                            `;
+            }).join('')}
+                    </tbody>
+                    <tfoot class="table-info">
+                        <tr>
+                            <th>TOTAL GENERAL</th>
+                            <th colspan="2"></th>
+                            <th><strong>${formatearMoneda(totalGeneral)}</strong></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        `;
+
+            resultado.innerHTML = tablaHTML;
+
+        } catch (error) {
+            console.error('Error:', error);
+            resultado.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        }
+    }
+
+    function mostrarReporteInsumosUsados() {
+        const contenedor = document.getElementById('contenedorReporte');
+        contenedor.innerHTML = `
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-graph-up"></i> Top 5 Insumos Más Usados
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <button class="btn btn-info" onclick="cargarReporteInsumosUsados()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar Datos
+                </button>
+            </div>
+            <div id="resultadoInsumosUsados">
+                <div class="text-center">
+                    <div class="spinner-border text-info"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+        cargarReporteInsumosUsados();
+    }
+
+    async function cargarReporteInsumosUsados() {
+        const resultado = document.getElementById('resultadoInsumosUsados');
+        resultado.innerHTML = '<div class="text-center"><div class="spinner-border text-info"></div></div>';
+
+        try {
+            const response = await fetch('/api/reportes/insumos-mas-usados');
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error cargando reporte');
+            }
+
+            if (data.length === 0) {
+                resultado.innerHTML = '<p class="text-muted text-center">No hay datos de consumo registrados</p>';
+                return;
+            }
+
+            const tablaHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Posición</th>
+                            <th>Insumo</th>
+                            <th>Cantidad Usada</th>
+                            <th>Costo Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map((item, index) => `
+                            <tr>
+                                <td>
+                                    <span class="badge bg-${index === 0 ? 'warning' : index === 1 ? 'secondary' : index === 2 ? 'dark' : 'primary'} fs-6">
+                                        #${index + 1}
+                                    </span>
+                                </td>
+                                <td><strong>${item.descripcion}</strong></td>
+                                <td>${parseFloat(item.total_usado).toFixed(2)} unidades</td>
+                                <td><strong>${formatearMoneda(item.costo_total)}</strong></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+            resultado.innerHTML = tablaHTML;
+
+        } catch (error) {
+            console.error('Error:', error);
+            resultado.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        }
+    }
+
+    function mostrarReporteTecnicosMantenimientos() {
+        const contenedor = document.getElementById('contenedorReporte');
+        contenedor.innerHTML = `
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-person-gear"></i> Top 5 Técnicos con Más Mantenimientos
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <button class="btn btn-success" onclick="cargarReporteTecnicosMantenimientos()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar Datos
+                </button>
+            </div>
+            <div id="resultadoTecnicosMantenimientos">
+                <div class="text-center">
+                    <div class="spinner-border text-success"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+        cargarReporteTecnicosMantenimientos();
+    }
+
+    async function cargarReporteTecnicosMantenimientos() {
+        const resultado = document.getElementById('resultadoTecnicosMantenimientos');
+        resultado.innerHTML = '<div class="text-center"><div class="spinner-border text-success"></div></div>';
+
+        try {
+            const response = await fetch('/api/reportes/tecnicos-mas-mantenimientos');
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error cargando reporte');
+            }
+
+            if (data.length === 0) {
+                resultado.innerHTML = '<p class="text-muted text-center">No hay mantenimientos registrados</p>';
+                return;
+            }
+
+            const tablaHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Posición</th>
+                            <th>Técnico</th>
+                            <th>Total Mantenimientos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map((item, index) => `
+                            <tr>
+                                <td>
+                                    <span class="badge bg-${index === 0 ? 'warning' : index === 1 ? 'secondary' : index === 2 ? 'dark' : 'success'} fs-6">
+                                        #${index + 1}
+                                    </span>
+                                </td>
+                                <td><strong>${item.nombre} ${item.apellido}</strong></td>
+                                <td>
+                                    <span class="badge bg-success fs-6">${item.total} mantenimientos</span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+            resultado.innerHTML = tablaHTML;
+
+        } catch (error) {
+            console.error('Error:', error);
+            resultado.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        }
+    }
+
+    function mostrarReporteClientesMaquinas() {
+        const contenedor = document.getElementById('contenedorReporte');
+        contenedor.innerHTML = `
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-cpu"></i> Top 5 Clientes con Más Máquinas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <button class="btn btn-warning" onclick="cargarReporteClientesMaquinas()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar Datos
+                </button>
+            </div>
+            <div id="resultadoClientesMaquinas">
+                <div class="text-center">
+                    <div class="spinner-border text-warning"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+        cargarReporteClientesMaquinas();
+    }
+
+    async function cargarReporteClientesMaquinas() {
+        const resultado = document.getElementById('resultadoClientesMaquinas');
+        resultado.innerHTML = '<div class="text-center"><div class="spinner-border text-warning"></div></div>';
+
+        try {
+            const response = await fetch('/api/reportes/clientes-mas-maquinas');
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error cargando reporte');
+            }
+
+            if (data.length === 0) {
+                resultado.innerHTML = '<p class="text-muted text-center">No hay máquinas registradas</p>';
+                return;
+            }
+
+            const tablaHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Posición</th>
+                            <th>Cliente</th>
+                            <th>Cantidad de Máquinas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map((item, index) => `
+                            <tr>
+                                <td>
+                                    <span class="badge bg-${index === 0 ? 'warning' : index === 1 ? 'secondary' : index === 2 ? 'dark' : 'primary'} fs-6">
+                                        #${index + 1}
+                                    </span>
+                                </td>
+                                <td><strong>${item.nombre}</strong></td>
+                                <td>
+                                    <span class="badge bg-primary fs-6">${item.cantidad} máquinas</span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+            resultado.innerHTML = tablaHTML;
+
+        } catch (error) {
+            console.error('Error:', error);
+            resultado.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        }
+    }
+</script>
+{% endblock %}
