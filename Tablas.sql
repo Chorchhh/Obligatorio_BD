@@ -121,4 +121,4 @@ INSERT INTO login (correo, contrasena, es_administrador) VALUES
 ('admin@cafesmarloy.com', 'admin123', TRUE),
 ('tecnico1@cafesmarloy.com', 'tecnico123', FALSE),
 ('admin2@cafesmarloy.com', 'admin456', TRUE),
-('tecnico2@cafesmarloy.com',
+('tecnico2@cafesmarloy.com', 'tecnico456', FALSE);
