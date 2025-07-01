@@ -125,4 +125,5 @@ python3 diagnostico.py
 ---
 
 **Implementación por**: Jorge Mendez, Felipe Heredia, Valentin Rodríguez 
+
 **Curso**: Bases de Datos I - UCU 2025 
