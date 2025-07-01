@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Máquinas - Sistema Cafés Marloy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-cpu text-success"></i> Gestión de Máquinas</h1>
+            {% if session.es_admin %}
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalMaquina">
+                <i class="bi bi-plus-circle"></i> Agregar Máquina
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list"></i> Máquinas Instaladas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="tablaMaquinas">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Modelo</th>
+                                <th>Cliente</th>
+                                <th>Ubicación</th>
+                                <th>Costo Mensual</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaMaquinas">
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar máquina -->
+<div class="modal fade" id="modalMaquina" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-cpu"></i> Agregar Máquina
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formMaquina">
+                    <div class="mb-3">
+                        <label for="modelo" class="form-label">Modelo *</label>
+                        <input type="text" class="form-control" id="modelo" name="modelo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_cliente" class="form-label">Cliente *</label>
+                        <select class="form-select" id="id_cliente" name="id_cliente" required>
+                            <option value="">Cargando clientes...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ubicacion_cliente" class="form-label">Ubicación en Cliente *</label>
+                        <input type="text" class="form-control" id="ubicacion_cliente" name="ubicacion_cliente"
+                            placeholder="Ej: Sala de espera, Recepción, etc." required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="costo_alquiler_mensual" class="form-label">Costo Alquiler Mensual ($) *</label>
+                        <input type="number" class="form-control" id="costo_alquiler_mensual"
+                            name="costo_alquiler_mensual" step="0.01" min="0" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnGuardarMaquina">
+                    <i class="bi bi-save"></i> Guardar Máquina
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let maquinas = [];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        cargarMaquinas();
+        cargarClientesSelect();
+
+        document.getElementById('btnGuardarMaquina').addEventListener('click', guardarMaquina);
+    });
+
+    async function cargarMaquinas() {
+        try {
+            const response = await fetch('/api/maquinas');
+            maquinas = await response.json();
+
+            if (maquinas.error) {
+                throw new Error(maquinas.error);
+            }
+
+            mostrarMaquinas();
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarAlerta('Error cargando máquinas: ' + error.message, 'danger');
+            document.getElementById('cuerpoTablaMaquinas').innerHTML =
+                '<tr><td colspan="6" class="text-center text-danger">Error cargando datos</td></tr>';
+        }
+    }
+
+    async function cargarClientesSelect() {
+        const selectCliente = document.getElementById('id_cliente');
+        await cargarOpcionesSelect(selectCliente, '/api/clientes', 'id', 'nombre', 'Seleccionar cliente...');
+    }
+
+    function mostrarMaquinas() {
+        const tbody = document.getElementById('cuerpoTablaMaquinas');
+
+        if (maquinas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay máquinas registradas</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = maquinas.map(maquina => `
+        <tr>
+            <td><span class="badge bg-primary">${maquina.id}</span></td>
+            <td><strong>${maquina.modelo}</strong></td>
+            <td>
+                <i class="bi bi-building"></i>
+                ${maquina.cliente_nombre}
+            </td>
+            <td>
+                <i class="bi bi-geo-alt"></i>
+                ${maquina.ubicacion_cliente}
+            </td>
+            <td>
+                <span class="badge bg-success fs-6">
+                    ${formatearMoneda(maquina.costo_alquiler_mensual)}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-info" onclick="verDetalle(${maquina.id})"
+                        data-bs-toggle="tooltip" title="Ver detalle">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+        // Reinicializar tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+
+    async function guardarMaquina() {
+        const form = document.getElementById('formMaquina');
+
+        if (!validarFormulario(form)) {
+            mostrarAlerta('Por favor complete todos los campos requeridos', 'warning');
+            return;
+        }
+
+        const formData = new FormData(form);
+        const maquina = Object.fromEntries(formData.entries());
+
+        // Convertir números
+        maquina.id_cliente = parseInt(maquina.id_cliente);
+        maquina.costo_alquiler_mensual = parseFloat(maquina.costo_alquiler_mensual);
+
+        const btnGuardar = document.getElementById('btnGuardarMaquina');
+        mostrarLoading(btnGuardar);
+
+        try {
+            const response = await fetch('/api/maquinas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(maquina)
+            });
+
+            const resultado = await response.json();
+
+            if (!response.ok) {
+                throw new Error(resultado.error || 'Error guardando máquina');
+            }
+
+            mostrarAlerta(resultado.message, 'success');
+
+            // Cerrar modal y resetear formulario
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalMaquina'));
+            modal.hide();
+            form.reset();
+            limpiarValidacion(form);
+
+            // Recargar lista
+            cargarMaquinas();
+
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarAlerta('Error guardando máquina: ' + error.message, 'danger');
+        } finally {
+            mostrarLoading(btnGuardar, false);
+        }
+    }
+
+    function verDetalle(maquinaId) {
+        const maquina = maquinas.find(m => m.id === maquinaId);
+        if (maquina) {
+            alert(`Máquina ID: ${maquina.id}\n` +
+                `Modelo: ${maquina.modelo}\n` +
+                `Cliente: ${maquina.cliente_nombre}\n` +
+                `Ubicación: ${maquina.ubicacion_cliente}\n` +
+                `Costo mensual: ${formatearMoneda(maquina.costo_alquiler_mensual)}`);
+        }
+    }
+
+    // Limpiar formulario cuando se cierra el modal
+    document.getElementById('modalMaquina').addEventListener('hidden.bs.modal', function () {
+        const form = document.getElementById('formMaquina');
+        form.reset();
+        limpiarValidacion(form);
+    });
+</script>
+{% endblock %}

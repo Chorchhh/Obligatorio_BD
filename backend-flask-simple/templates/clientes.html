@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - Sistema Cafés Marloy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-people text-primary"></i> Gestión de Clientes</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCliente">
+                <i class="bi bi-plus-circle"></i> Agregar Cliente
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list"></i> Lista de Clientes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="tablaClientes">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Dirección</th>
+                                <th>Teléfono</th>
+                                <th>Correo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaClientes">
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar/editar cliente -->
+<div class="modal fade" id="modalCliente" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus"></i> Agregar Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCliente">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección *</label>
+                        <input type="text" class="form-control" id="direccion" name="direccion" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono" class="form-label">Teléfono *</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="correo" class="form-label">Correo Electrónico *</label>
+                        <input type="email" class="form-control" id="correo" name="correo" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarCliente">
+                    <i class="bi bi-save"></i> Guardar Cliente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let clientes = [];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        cargarClientes();
+
+        document.getElementById('btnGuardarCliente').addEventListener('click', guardarCliente);
+    });
+
+    async function cargarClientes() {
+        try {
+            const response = await fetch('/api/clientes');
+            clientes = await response.json();
+
+            if (clientes.error) {
+                throw new Error(clientes.error);
+            }
+
+            mostrarClientes();
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarAlerta('Error cargando clientes: ' + error.message, 'danger');
+            document.getElementById('cuerpoTablaClientes').innerHTML =
+                '<tr><td colspan="6" class="text-center text-danger">Error cargando datos</td></tr>';
+        }
+    }
+
+    function mostrarClientes() {
+        const tbody = document.getElementById('cuerpoTablaClientes');
+
+        if (clientes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay clientes registrados</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = clientes.map(cliente => `
+        <tr>
+            <td>${cliente.id}</td>
+            <td><strong>${cliente.nombre}</strong></td>
+            <td>${cliente.direccion}</td>
+            <td>
+                <i class="bi bi-telephone"></i>
+                <a href="tel:${cliente.telefono}">${cliente.telefono}</a>
+            </td>
+            <td>
+                <i class="bi bi-envelope"></i>
+                <a href="mailto:${cliente.correo}">${cliente.correo}</a>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-info" onclick="verDetalle(${cliente.id})" 
+                        data-bs-toggle="tooltip" title="Ver detalle">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+        // Reinicializar tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+
+    async function guardarCliente() {
+        const form = document.getElementById('formCliente');
+
+        if (!validarFormulario(form)) {
+            mostrarAlerta('Por favor complete todos los campos requeridos', 'warning');
+            return;
+        }
+
+        const formData = new FormData(form);
+        const cliente = Object.fromEntries(formData.entries());
+
+        const btnGuardar = document.getElementById('btnGuardarCliente');
+        mostrarLoading(btnGuardar);
+
+        try {
+            const response = await fetch('/api/clientes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(cliente)
+            });
+
+            const resultado = await response.json();
+
+            if (!response.ok) {
+                throw new Error(resultado.error || 'Error guardando cliente');
+            }
+
+            mostrarAlerta(resultado.message, 'success');
+
+            // Cerrar modal y resetear formulario
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalCliente'));
+            modal.hide();
+            form.reset();
+            limpiarValidacion(form);
+
+            // Recargar lista
+            cargarClientes();
+
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarAlerta('Error guardando cliente: ' + error.message, 'danger');
+        } finally {
+            mostrarLoading(btnGuardar, false);
+        }
+    }
+
+    function verDetalle(clienteId) {
+        const cliente = clientes.find(c => c.id === clienteId);
+        if (cliente) {
+            alert(`Cliente: ${cliente.nombre}\nDirección: ${cliente.direccion}\nTeléfono: ${cliente.telefono}\nCorreo: ${cliente.correo}`);
+        }
+    }
+
+    // Limpiar formulario cuando se cierra el modal
+    document.getElementById('modalCliente').addEventListener('hidden.bs.modal', function () {
+        const form = document.getElementById('formCliente');
+        form.reset();
+        limpiarValidacion(form);
+    });
+</script>
+{% endblock %}
