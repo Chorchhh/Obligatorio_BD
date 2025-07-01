@@ -11,12 +11,25 @@ app.secret_key = 'cafes_marloy_secret_key_2025'
 
 
 def conectar():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="valerodma",
-        database="cafes_marloy_vale"
-    )
+    # Probar diferentes configuraciones de conexión
+    configuraciones = [
+        {"host": "localhost", "user": "root", "password": "", "database": "Obligatorio"},
+        {"host": "localhost", "user": "root", "password": "root", "database": "Obligatorio"},
+        {"host": "localhost", "user": "root", "password": "rootroot", "database": "Obligatorio"},
+        {"host": "localhost", "user": "root", "password": "mysql", "database": "Obligatorio"},
+    ]
+    
+    for config in configuraciones:
+        try:
+            conn = mysql.connector.connect(**config)
+            print(f"✅ Conexión exitosa con contraseña: {'(vacía)' if not config['password'] else config['password']}")
+            return conn
+        except mysql.connector.Error as e:
+            print(f"❌ Error con contraseña '{config['password']}': {e}")
+            continue
+    
+    # Si todas fallan, lanzar error
+    raise Exception("No se pudo conectar con ninguna configuración. Verifica tu contraseña de MySQL.")
 
 # ─────────────── AUTENTICACIÓN Y PERMISOS ───────────────
 
