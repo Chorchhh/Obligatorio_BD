@@ -50,9 +50,8 @@ Sistema integral de gestión para máquinas de café con interfaz web moderna, f
    ```
 
    Esto creará:
-
-   - **👑 Administrador**: admin@cafesmarloy.com / 123456
-   - **👤 Usuario**: usuario@cafesmarloy.com / 123456
+   - **👑 Administrador**: admin@cafesmarloy.com / admin123
+   - **👤 Usuario Técnico**: tecnico1@cafesmarloy.com / tecnico123
 
 4. **Ejecutar la aplicación**
 
@@ -73,8 +72,8 @@ Al acceder al sistema por primera vez, verás la pantalla de login:
 - Ingresa tu correo y contraseña
 - El sistema te redirigirá al dashboard según tu rol
 - Puedes usar las credenciales de demostración:
-  - **Admin**: admin@cafesmarloy.com / 123456
-  - **Usuario**: usuario@cafesmarloy.com / 123456
+  - **Admin**: admin@cafesmarloy.com / admin123
+  - **Usuario Técnico**: tecnico1@cafesmarloy.com / tecnico123
 
 ### 👥 Roles y Permisos
 
@@ -237,9 +236,15 @@ pip install -r requirements.txt
 
 ## 📞 Soporte
 
-Para cualquier problema o consulta sobre el sistema, contacta al desarrollador.
+Para cualquier problema o consulta sobre el sistema, contacta a los desarrolladores.
+
+felipe.heredia@correo.ucu.edu.uy
+
+jorge.mendez@correo.ucu.edu.uy
+
+vale.rodriguez@correo.ucu.edu.uy
 
 ---
 
 **Sistema desarrollado para Cafés Marloy** ☕
-_Gestión inteligente de máquinas de café_
+*Gestión inteligente de máquinas de café* 

@@ -1,8 +1,6 @@
 import mysql.connector
 
 # ─────────────── CONEXIÓN MYSQL ───────────────
-
-
 def conectar():
     return mysql.connector.connect(
         host="localhost",
@@ -10,7 +8,6 @@ def conectar():
         password="rootroot",
         database="cafes_marloy"
     )
-
 
 # ─────────────── USUARIOS ───────────────
 usuario_actual = None
@@ -42,7 +39,6 @@ def login_usuario():
 
 # ─────────────── CLIENTES ───────────────
 
-
 def listar_clientes():
     conn = conectar()
     cursor = conn.cursor()
@@ -69,7 +65,6 @@ def agregar_cliente():
     conn.close()
 
 # ─────────────── INSUMOS ───────────────
-
 
 def listar_insumos():
     conn = conectar()
@@ -99,7 +94,6 @@ def agregar_insumo():
 
 # ─────────────── TÉCNICOS ───────────────
 
-
 def listar_tecnicos():
     conn = conectar()
     cursor = conn.cursor()
@@ -126,7 +120,6 @@ def agregar_tecnico():
     conn.close()
 
 # ─────────────── MÁQUINAS ───────────────
-
 
 def listar_maquinas():
     conn = conectar()
@@ -156,7 +149,6 @@ def agregar_maquina():
 
 # ─────────────── REGISTRO DE CONSUMO ───────────────
 
-
 def registrar_consumo():
     id_maquina = int(input("ID de máquina: "))
     id_insumo = int(input("ID de insumo: "))
@@ -173,7 +165,6 @@ def registrar_consumo():
     conn.close()
 
 # ─────────────── REGISTRO DE MANTENIMIENTO ───────────────
-
 
 def registrar_mantenimiento():
     id_maquina = int(input("ID de máquina: "))
@@ -207,7 +198,6 @@ def registrar_mantenimiento():
 # ─────────────── REPORTERÍA ───────────────
 
     # ─────────────── TOTAL MENSUAL x CLIENTE (ALQUILER + EL CONSUMO)───────────────
-
 
 def reporte_total_mensual():
     mes = input("Ingresá el mes en formato YYYY-MM (por ejemplo 2025-06): ")
@@ -251,7 +241,6 @@ def reporte_total_mensual():
 
     # ─────────────── TOP 5 DE INSUMOS MÁS USADOS ───────────────
 
-
 def reporte_insumos_mas_usados():
     conn = conectar()
     cursor = conn.cursor()
@@ -272,7 +261,6 @@ def reporte_insumos_mas_usados():
 
     # ─────────────── TÉCNICOS CON MÁS MANTENIMIENTO ───────────────
 
-
 def reporte_tecnicos_mas_mantenimientos():
     conn = conectar()
     cursor = conn.cursor()
@@ -291,7 +279,6 @@ def reporte_tecnicos_mas_mantenimientos():
     conn.close()
 
     # ─────────────── CLIENTES CON MÁS MÁQUINAS INSTALADAS ───────────────
-
 
 def reporte_clientes_con_mas_maquinas():
     conn = conectar()
@@ -312,8 +299,6 @@ def reporte_clientes_con_mas_maquinas():
 
 # ───────────────---------------───────────────
 # ─────────────── MENÚ PRINCIPAL ───────────────
-
-
 def menu():
     while True:
         print("\n📋 Menú Principal:")
@@ -363,7 +348,6 @@ def menu():
         else:
             print("❌ Opción inválida o no permitida.")
 
-
 def sub_menu_reportes():
     print("\n📊 SUBMENÚ DE REPORTES:")
     print("1. Total mensual por cliente")
@@ -387,7 +371,6 @@ def sub_menu_reportes():
         print("❌ Opción inválida.")
 
     input("\nPresioná Enter para volver al menú principal...")
-
 
 # ─────────────── EJECUTAR MENÚ SEGUN USUARIO───────────────
 if __name__ == "__main__":

@@ -58,8 +58,8 @@ python3 app.py
 
 - Abrir navegador en: `http://localhost:5000`
 - Login como:
-  - **Admin**: `admin@cafesmarloy.com` / `123456`
-  - **Usuario**: `usuario@cafesmarloy.com` / `123456`
+  - **Admin**: `admin@cafesmarloy.com` / `admin123`
+  - **Técnico**: `tecnico1@cafesmarloy.com` / `tecnico123`
 
 ## 📁 Estructura de Archivos
 
