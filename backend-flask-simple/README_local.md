@@ -207,7 +207,8 @@ pip install -r requirements.txt
 
 ## 📞 Soporte
 
-Para cualquier problema o consulta sobre el sistema, contacta al desarrollador.
+Para cualquier problema o consulta sobre el sistema, contacta a los desarrolladores.
+
 felipe.heredia@correo.ucu.edu.uy
 
 jorge.mendez@correo.ucu.edu.uy
