@@ -2,10 +2,208 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import mysql.connector
 from datetime import datetime
 from functools import wraps
+import re
+import html
+from decimal import Decimal, InvalidOperation
 
 app = Flask(__name__)
 # Cambiar por una clave secreta segura
 app.secret_key = 'cafes_marloy_secret_key_2025'
+
+# ─────────────── SISTEMA DE VALIDACIONES ───────────────
+
+class ValidationError(Exception):
+    """Excepción personalizada para errores de validación"""
+    pass
+
+def validar_email(email):
+    """Valida formato de email"""
+    if not email or not isinstance(email, str):
+        raise ValidationError("Email es requerido")
+    
+    email = email.strip().lower()
+    
+    # Patrón regex para email válido
+    patron_email = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    
+    if not re.match(patron_email, email):
+        raise ValidationError("Formato de email inválido")
+    
+    if len(email) > 100:
+        raise ValidationError("Email no puede exceder 100 caracteres")
+    
+    return email
+
+def validar_texto_requerido(texto, nombre_campo, longitud_min=1, longitud_max=255):
+    """Valida texto requerido con longitud específica"""
+    if not texto or not isinstance(texto, str):
+        raise ValidationError(f"{nombre_campo} es requerido")
+    
+    texto = texto.strip()
+    
+    if len(texto) < longitud_min:
+        raise ValidationError(f"{nombre_campo} debe tener al menos {longitud_min} caracteres")
+    
+    if len(texto) > longitud_max:
+        raise ValidationError(f"{nombre_campo} no puede exceder {longitud_max} caracteres")
+    
+    # Sanitizar caracteres especiales para prevenir XSS
+    texto = html.escape(texto)
+    
+    return texto
+
+def validar_texto_opcional(texto, nombre_campo, longitud_max=255):
+    """Valida texto opcional"""
+    if not texto:
+        return ""
+    
+    if not isinstance(texto, str):
+        raise ValidationError(f"{nombre_campo} debe ser texto")
+    
+    texto = texto.strip()
+    
+    if len(texto) > longitud_max:
+        raise ValidationError(f"{nombre_campo} no puede exceder {longitud_max} caracteres")
+    
+    # Sanitizar caracteres especiales
+    texto = html.escape(texto)
+    
+    return texto
+
+def validar_cedula_uruguaya(ci):
+    """Valida cédula de identidad uruguaya"""
+    if not ci or not isinstance(ci, str):
+        raise ValidationError("Cédula es requerida")
+    
+    ci = ci.strip().replace(".", "").replace("-", "")
+    
+    # Debe tener entre 7 y 8 dígitos
+    if not ci.isdigit() or len(ci) < 7 or len(ci) > 8:
+        raise ValidationError("Cédula debe tener entre 7 y 8 dígitos numéricos")
+    
+    # Algoritmo de validación de cédula uruguaya
+    if len(ci) == 7:
+        ci = "0" + ci
+    
+    coeficientes = [2, 9, 8, 7, 6, 3, 4]
+    suma = sum(int(ci[i]) * coeficientes[i] for i in range(7))
+    
+    digito_verificador = (10 - (suma % 10)) % 10
+    
+    if int(ci[7]) != digito_verificador:
+        raise ValidationError("Cédula inválida - dígito verificador incorrecto")
+    
+    return ci
+
+def validar_telefono(telefono):
+    """Valida número de teléfono uruguayo"""
+    if not telefono:
+        return ""
+    
+    if not isinstance(telefono, str):
+        raise ValidationError("Teléfono debe ser texto")
+    
+    telefono = telefono.strip().replace(" ", "").replace("-", "")
+    
+    # Teléfono uruguayo: celular (09XXXXXXXX) o fijo (2XXXXXXX)
+    patron_telefono = r'^(09\d{7}|2\d{7})$'
+    
+    if not re.match(patron_telefono, telefono):
+        raise ValidationError("Teléfono debe ser celular (09XXXXXXXX) o fijo (2XXXXXXX)")
+    
+    return telefono
+
+def validar_precio(precio):
+    """Valida precio/costo decimal"""
+    if precio is None:
+        raise ValidationError("Precio es requerido")
+    
+    try:
+        precio_decimal = Decimal(str(precio))
+        
+        if precio_decimal < 0:
+            raise ValidationError("Precio no puede ser negativo")
+        
+        if precio_decimal > 999999.99:
+            raise ValidationError("Precio no puede exceder $999,999.99")
+        
+        # Máximo 2 decimales
+        if precio_decimal.as_tuple().exponent < -2:
+            raise ValidationError("Precio no puede tener más de 2 decimales")
+        
+        return float(precio_decimal)
+        
+    except (InvalidOperation, ValueError):
+        raise ValidationError("Precio debe ser un número válido")
+
+def validar_cantidad(cantidad):
+    """Valida cantidad usada"""
+    if cantidad is None:
+        raise ValidationError("Cantidad es requerida")
+    
+    try:
+        cantidad_decimal = Decimal(str(cantidad))
+        
+        if cantidad_decimal <= 0:
+            raise ValidationError("Cantidad debe ser mayor a 0")
+        
+        if cantidad_decimal > 999.99:
+            raise ValidationError("Cantidad no puede exceder 999.99")
+        
+        return float(cantidad_decimal)
+        
+    except (InvalidOperation, ValueError):
+        raise ValidationError("Cantidad debe ser un número válido")
+
+def validar_fecha(fecha_str):
+    """Valida formato de fecha"""
+    if not fecha_str:
+        raise ValidationError("Fecha es requerida")
+    
+    try:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d')
+        
+        # No puede ser fecha futura (para consumos/mantenimientos)
+        if fecha.date() > datetime.now().date():
+            raise ValidationError("La fecha no puede ser futura")
+        
+        return fecha_str
+        
+    except ValueError:
+        raise ValidationError("Formato de fecha inválido (YYYY-MM-DD)")
+
+def validar_fecha_hora(fecha_hora_str):
+    """Valida formato de fecha y hora"""
+    if not fecha_hora_str:
+        raise ValidationError("Fecha y hora son requeridas")
+    
+    try:
+        fecha_hora = datetime.strptime(fecha_hora_str, '%Y-%m-%d %H:%M:%S')
+        
+        # No puede ser fecha/hora futura
+        if fecha_hora > datetime.now():
+            raise ValidationError("La fecha y hora no pueden ser futuras")
+        
+        return fecha_hora_str
+        
+    except ValueError:
+        raise ValidationError("Formato de fecha/hora inválido (YYYY-MM-DD HH:MM:SS)")
+
+def validar_id_entero(id_valor, nombre_campo):
+    """Valida ID como entero positivo"""
+    if id_valor is None:
+        raise ValidationError(f"{nombre_campo} es requerido")
+    
+    try:
+        id_int = int(id_valor)
+        
+        if id_int <= 0:
+            raise ValidationError(f"{nombre_campo} debe ser un número positivo")
+        
+        return id_int
+        
+    except (ValueError, TypeError):
+        raise ValidationError(f"{nombre_campo} debe ser un número entero válido")
 
 # ─────────────── CONEXIÓN MYSQL ───────────────
 
@@ -68,19 +266,24 @@ def verificar_login(correo, contrasena):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        correo = request.form['correo']
-        contrasena = request.form['contrasena']
+        try:
+            # Validaciones de entrada
+            correo = validar_email(request.form.get('correo'))
+            contrasena = validar_texto_requerido(request.form.get('contrasena'), 'Contraseña', 1)
 
-        autenticado, es_admin = verificar_login(correo, contrasena)
+            autenticado, es_admin = verificar_login(correo, contrasena)
 
-        if autenticado:
-            session['usuario_correo'] = correo
-            session['es_admin'] = es_admin
-            flash(
-                f'Bienvenido, {correo}. Rol: {"Administrador" if es_admin else "Usuario"}', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Credenciales incorrectas', 'error')
+            if autenticado:
+                session['usuario_correo'] = correo
+                session['es_admin'] = es_admin
+                flash(
+                    f'Bienvenido, {correo}. Rol: {"Administrador" if es_admin else "Usuario"}', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('Credenciales incorrectas', 'error')
+                
+        except ValidationError as e:
+            flash(f'Error de validación: {str(e)}', 'error')
 
     return render_template('login.html')
 
@@ -166,16 +369,88 @@ def api_listar_clientes():
 def api_agregar_cliente():
     try:
         data = request.json
+        
+        # Validaciones
+        nombre = validar_texto_requerido(data.get('nombre'), 'Nombre', 2, 100)
+        direccion = validar_texto_opcional(data.get('direccion'), 'Dirección', 150)
+        telefono = validar_telefono(data.get('telefono', ''))
+        correo = validar_email(data.get('correo')) if data.get('correo') else ""
+        
+        # Verificar email único si se proporciona
+        if correo:
+            conn = conectar()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM clientes WHERE correo = %s", (correo,))
+            if cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'Ya existe un cliente con ese email'}), 400
+            cursor.close()
+            conn.close()
+        
+        # Insertar cliente
         conn = conectar()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO clientes (nombre, direccion, telefono, correo) VALUES (%s, %s, %s, %s)",
-                       (data['nombre'], data['direccion'], data['telefono'], data['correo']))
+                       (nombre, direccion, telefono, correo))
         conn.commit()
         cursor.close()
         conn.close()
         return jsonify({'success': True, 'message': 'Cliente agregado correctamente'})
+        
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
+
+# ─────────────── API ENDPOINTS - PROVEEDORES ───────────────
+
+@app.route('/api/proveedores', methods=['GET'])
+@login_required
+def api_listar_proveedores():
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, nombre, contacto FROM proveedores")
+        proveedores = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(proveedores)
+    except Exception as e:
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
+
+@app.route('/api/proveedores', methods=['POST'])
+@login_required
+@admin_required
+def api_agregar_proveedor():
+    try:
+        data = request.json
+        
+        # Validaciones
+        nombre = validar_texto_requerido(data.get('nombre'), 'Nombre', 2, 100)
+        contacto = validar_texto_opcional(data.get('contacto'), 'Contacto', 100)
+        
+        # Verificar nombre único
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM proveedores WHERE nombre = %s", (nombre,))
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Ya existe un proveedor con ese nombre'}), 400
+        
+        # Insertar proveedor
+        cursor.execute("INSERT INTO proveedores (nombre, contacto) VALUES (%s, %s)",
+                       (nombre, contacto))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Proveedor agregado correctamente'})
+        
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 # ─────────────── API ENDPOINTS - INSUMOS ───────────────
 
@@ -201,16 +476,39 @@ def api_listar_insumos():
 def api_agregar_insumo():
     try:
         data = request.json
+        
+        # Validaciones
+        descripcion = validar_texto_requerido(data.get('descripcion'), 'Descripción', 3, 100)
+        tipo = validar_texto_opcional(data.get('tipo'), 'Tipo', 50)
+        precio_unitario = validar_precio(data.get('precio_unitario'))
+        id_proveedor = validar_id_entero(data.get('id_proveedor'), 'ID Proveedor') if data.get('id_proveedor') else None
+        
+        # Verificar que el proveedor existe si se especifica
+        if id_proveedor:
+            conn = conectar()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM proveedores WHERE id = %s", (id_proveedor,))
+            if not cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return jsonify({'error': 'El proveedor especificado no existe'}), 400
+            cursor.close()
+            conn.close()
+        
+        # Insertar insumo
         conn = conectar()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO insumos (descripcion, tipo, precio_unitario, id_proveedor) VALUES (%s, %s, %s, %s)",
-                       (data['descripcion'], data['tipo'], data['precio_unitario'], data['id_proveedor']))
+                       (descripcion, tipo, precio_unitario, id_proveedor))
         conn.commit()
         cursor.close()
         conn.close()
         return jsonify({'success': True, 'message': 'Insumo agregado correctamente'})
+        
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 # ─────────────── API ENDPOINTS - TÉCNICOS ───────────────
 
@@ -236,16 +534,34 @@ def api_listar_tecnicos():
 def api_agregar_tecnico():
     try:
         data = request.json
+        
+        # Validaciones
+        ci = validar_cedula_uruguaya(data.get('ci'))
+        nombre = validar_texto_requerido(data.get('nombre'), 'Nombre', 2, 50)
+        apellido = validar_texto_requerido(data.get('apellido'), 'Apellido', 2, 50)
+        telefono = validar_telefono(data.get('telefono', ''))
+        
+        # Verificar cédula única
         conn = conectar()
         cursor = conn.cursor()
+        cursor.execute("SELECT ci FROM tecnicos WHERE ci = %s", (ci,))
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Ya existe un técnico con esa cédula'}), 400
+        
+        # Insertar técnico
         cursor.execute("INSERT INTO tecnicos (ci, nombre, apellido, telefono) VALUES (%s, %s, %s, %s)",
-                       (data['ci'], data['nombre'], data['apellido'], data['telefono']))
+                       (ci, nombre, apellido, telefono))
         conn.commit()
         cursor.close()
         conn.close()
         return jsonify({'success': True, 'message': 'Técnico agregado correctamente'})
+        
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 # ─────────────── API ENDPOINTS - MÁQUINAS ───────────────
 
@@ -276,66 +592,178 @@ def api_listar_maquinas():
 def api_agregar_maquina():
     try:
         data = request.json
+        
+        # Validaciones
+        modelo = validar_texto_opcional(data.get('modelo'), 'Modelo', 50)
+        id_cliente = validar_id_entero(data.get('id_cliente'), 'ID Cliente')
+        ubicacion_cliente = validar_texto_opcional(data.get('ubicacion_cliente'), 'Ubicación', 100)
+        costo_alquiler_mensual = validar_precio(data.get('costo_alquiler_mensual'))
+        
+        # Verificar que el cliente existe
         conn = conectar()
         cursor = conn.cursor()
+        cursor.execute("SELECT id FROM clientes WHERE id = %s", (id_cliente,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'El cliente especificado no existe'}), 400
+        
+        # Insertar máquina
         cursor.execute("INSERT INTO maquinas (modelo, id_cliente, ubicacion_cliente, costo_alquiler_mensual) VALUES (%s, %s, %s, %s)",
-                       (data['modelo'], data['id_cliente'], data['ubicacion_cliente'], data['costo_alquiler_mensual']))
+                       (modelo, id_cliente, ubicacion_cliente, costo_alquiler_mensual))
         conn.commit()
         cursor.close()
         conn.close()
         return jsonify({'success': True, 'message': 'Máquina agregada correctamente'})
+        
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 # ─────────────── API ENDPOINTS - CONSUMO ───────────────
 
+@app.route('/api/registro-consumo', methods=['GET'])
+@login_required
+def api_listar_consumos():
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT rc.id, rc.id_maquina, m.modelo as maquina_modelo, 
+                   rc.id_insumo, i.descripcion as insumo_descripcion,
+                   rc.fecha, rc.cantidad_usada
+            FROM registro_consumo rc
+            JOIN maquinas m ON rc.id_maquina = m.id
+            JOIN insumos i ON rc.id_insumo = i.id
+            ORDER BY rc.fecha DESC
+        """)
+        consumos = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(consumos)
+    except Exception as e:
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 @app.route('/api/consumo', methods=['POST'])
 @login_required
 def api_registrar_consumo():
     try:
         data = request.json
+        
+        # Validaciones
+        id_maquina = validar_id_entero(data.get('id_maquina'), 'ID Máquina')
+        id_insumo = validar_id_entero(data.get('id_insumo'), 'ID Insumo')
+        fecha = validar_fecha(data.get('fecha'))
+        cantidad_usada = validar_cantidad(data.get('cantidad_usada'))
+        
+        # Verificar que máquina e insumo existen
         conn = conectar()
         cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM maquinas WHERE id = %s", (id_maquina,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'La máquina especificada no existe'}), 400
+        
+        cursor.execute("SELECT id FROM insumos WHERE id = %s", (id_insumo,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'El insumo especificado no existe'}), 400
+        
+        # Insertar consumo
         cursor.execute("INSERT INTO registro_consumo (id_maquina, id_insumo, fecha, cantidad_usada) VALUES (%s, %s, %s, %s)",
-                       (data['id_maquina'], data['id_insumo'], data['fecha'], data['cantidad_usada']))
+                       (id_maquina, id_insumo, fecha, cantidad_usada))
         conn.commit()
         cursor.close()
         conn.close()
         return jsonify({'success': True, 'message': 'Consumo registrado correctamente'})
+        
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 # ─────────────── API ENDPOINTS - MANTENIMIENTO ───────────────
 
+@app.route('/api/mantenimientos', methods=['GET'])
+@login_required
+def api_listar_mantenimientos():
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT m.id, m.id_maquina, maq.modelo as maquina_modelo,
+                   m.ci_tecnico, CONCAT(t.nombre, ' ', t.apellido) as tecnico_nombre,
+                   m.tipo, m.fecha, m.observaciones
+            FROM mantenimientos m
+            JOIN maquinas maq ON m.id_maquina = maq.id
+            JOIN tecnicos t ON m.ci_tecnico = t.ci
+            ORDER BY m.fecha DESC
+        """)
+        mantenimientos = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(mantenimientos)
+    except Exception as e:
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 @app.route('/api/mantenimiento', methods=['POST'])
 @login_required
 def api_registrar_mantenimiento():
     try:
         data = request.json
+        
+        # Validaciones
+        id_maquina = validar_id_entero(data.get('id_maquina'), 'ID Máquina')
+        ci_tecnico = validar_cedula_uruguaya(data.get('ci_tecnico'))
+        tipo = validar_texto_requerido(data.get('tipo'), 'Tipo de mantenimiento', 1, 50)
+        fecha = validar_fecha_hora(data.get('fecha'))
+        observaciones = validar_texto_opcional(data.get('observaciones'), 'Observaciones', 500)
+        
+        # Verificar que máquina y técnico existen
         conn = conectar()
         cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM maquinas WHERE id = %s", (id_maquina,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'La máquina especificada no existe'}), 400
+        
+        cursor.execute("SELECT ci FROM tecnicos WHERE ci = %s", (ci_tecnico,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'El técnico especificado no existe'}), 400
 
         # Verificar si el técnico ya tiene mantenimiento ese día y hora exacta
         cursor.execute("""
             SELECT * FROM mantenimientos
             WHERE ci_tecnico = %s AND fecha = %s
-        """, (data['ci_tecnico'], data['fecha']))
+        """, (ci_tecnico, fecha))
 
         if cursor.fetchone():
-            return jsonify({'error': 'El técnico ya tiene otro mantenimiento en ese momento'}), 400
-        else:
-            cursor.execute("""
-                INSERT INTO mantenimientos (id_maquina, ci_tecnico, tipo, fecha, observaciones)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (data['id_maquina'], data['ci_tecnico'], data['tipo'], data['fecha'], data['observaciones']))
-            conn.commit()
             cursor.close()
             conn.close()
-            return jsonify({'success': True, 'message': 'Mantenimiento registrado correctamente'})
+            return jsonify({'error': 'El técnico ya tiene otro mantenimiento en ese momento'}), 400
+        
+        # Insertar mantenimiento
+        cursor.execute("""
+            INSERT INTO mantenimientos (id_maquina, ci_tecnico, tipo, fecha, observaciones)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (id_maquina, ci_tecnico, tipo, fecha, observaciones))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Mantenimiento registrado correctamente'})
+        
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 # ─────────────── API ENDPOINTS - REPORTES ───────────────
 

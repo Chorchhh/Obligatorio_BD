@@ -65,19 +65,31 @@
                 <form id="formCliente">
                     <div class="mb-3">
                         <label for="nombre" class="form-label">Nombre *</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required 
+                               placeholder="Ej: Oficina Central"
+                               minlength="2" maxlength="100">
+                        <div class="form-text">Mínimo 2 caracteres, máximo 100</div>
                     </div>
                     <div class="mb-3">
-                        <label for="direccion" class="form-label">Dirección *</label>
-                        <input type="text" class="form-control" id="direccion" name="direccion" required>
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="direccion" name="direccion"
+                               placeholder="Ej: Av. Rivera 1234"
+                               maxlength="150">
+                        <div class="form-text">Opcional, máximo 150 caracteres</div>
                     </div>
                     <div class="mb-3">
-                        <label for="telefono" class="form-label">Teléfono *</label>
-                        <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono"
+                               placeholder="Ej: 099123456 o 29001234"
+                               pattern="^(09\d{7}|2\d{7})$">
+                        <div class="form-text">Celular: 09XXXXXXXX o Fijo: 2XXXXXXX</div>
                     </div>
                     <div class="mb-3">
-                        <label for="correo" class="form-label">Correo Electrónico *</label>
-                        <input type="email" class="form-control" id="correo" name="correo" required>
+                        <label for="correo" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="correo" name="correo"
+                               placeholder="Ej: oficina@cliente.com"
+                               maxlength="100">
+                        <div class="form-text">Opcional, formato válido de email</div>
                     </div>
                 </form>
             </div>
@@ -98,6 +110,10 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         cargarClientes();
+        
+        // Configurar validación en tiempo real
+        const formulario = document.getElementById('formCliente');
+        configurarValidacionTiempoReal(formulario);
 
         document.getElementById('btnGuardarCliente').addEventListener('click', guardarCliente);
     });
@@ -158,14 +174,15 @@
     }
 
     async function guardarCliente() {
-        const form = document.getElementById('formCliente');
+        const formulario = document.getElementById('formCliente');
 
-        if (!validarFormulario(form)) {
-            mostrarAlerta('Por favor complete todos los campos requeridos', 'warning');
+        // Validar formulario completo con errores específicos
+        if (!validarFormularioCompleto(formulario)) {
+            mostrarAlerta('Por favor corrija los errores en el formulario', 'warning');
             return;
         }
 
-        const formData = new FormData(form);
+        const formData = new FormData(formulario);
         const cliente = Object.fromEntries(formData.entries());
 
         const btnGuardar = document.getElementById('btnGuardarCliente');
@@ -180,26 +197,23 @@
                 body: JSON.stringify(cliente)
             });
 
-            const resultado = await response.json();
-
-            if (!response.ok) {
-                throw new Error(resultado.error || 'Error guardando cliente');
-            }
+            // Usar el manejo mejorado de respuestas
+            const resultado = await manejarRespuestaServidor(response, formulario);
 
             mostrarAlerta(resultado.message, 'success');
 
             // Cerrar modal y resetear formulario
             const modal = bootstrap.Modal.getInstance(document.getElementById('modalCliente'));
             modal.hide();
-            form.reset();
-            limpiarValidacion(form);
+            formulario.reset();
+            limpiarValidacionCompleta(formulario);
 
             // Recargar lista
             cargarClientes();
 
         } catch (error) {
-            console.error('Error:', error);
-            mostrarAlerta('Error guardando cliente: ' + error.message, 'danger');
+            console.error('Error guardando cliente:', error);
+            // El error ya fue mostrado por manejarRespuestaServidor
         } finally {
             mostrarLoading(btnGuardar, false);
         }
@@ -214,9 +228,9 @@
 
     // Limpiar formulario cuando se cierra el modal
     document.getElementById('modalCliente').addEventListener('hidden.bs.modal', function () {
-        const form = document.getElementById('formCliente');
-        form.reset();
-        limpiarValidacion(form);
+        const formulario = document.getElementById('formCliente');
+        formulario.reset();
+        limpiarValidacionCompleta(formulario);
     });
 </script>
 {% endblock %}

@@ -66,20 +66,32 @@
                 <form id="formTecnico">
                     <div class="mb-3">
                         <label for="ci" class="form-label">Cédula de Identidad *</label>
-                        <input type="text" class="form-control" id="ci" name="ci" placeholder="Ej: 12345678"
-                            maxlength="20" required>
+                        <input type="text" class="form-control" id="ci" name="ci" required
+                               placeholder="Ej: 12345678 o 1.234.567-8"
+                               minlength="7" maxlength="8"
+                               pattern="[\d\.\-]*">
+                        <div class="form-text">7-8 dígitos numéricos con dígito verificador válido</div>
                     </div>
                     <div class="mb-3">
                         <label for="nombre" class="form-label">Nombre *</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required
+                               placeholder="Ej: Juan"
+                               minlength="2" maxlength="50">
+                        <div class="form-text">Mínimo 2 caracteres, máximo 50</div>
                     </div>
                     <div class="mb-3">
                         <label for="apellido" class="form-label">Apellido *</label>
-                        <input type="text" class="form-control" id="apellido" name="apellido" required>
+                        <input type="text" class="form-control" id="apellido" name="apellido" required
+                               placeholder="Ej: Pérez"
+                               minlength="2" maxlength="50">
+                        <div class="form-text">Mínimo 2 caracteres, máximo 50</div>
                     </div>
                     <div class="mb-3">
-                        <label for="telefono" class="form-label">Teléfono *</label>
-                        <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono"
+                               placeholder="Ej: 099123456 o 29001234"
+                               pattern="^(09\d{7}|2\d{7})$">
+                        <div class="form-text">Celular: 09XXXXXXXX o Fijo: 2XXXXXXX</div>
                     </div>
                 </form>
             </div>
@@ -100,6 +112,11 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         cargarTecnicos();
+        
+        // Configurar validación en tiempo real
+        const formulario = document.getElementById('formTecnico');
+        configurarValidacionTiempoReal(formulario);
+        
         document.getElementById('btnGuardarTecnico').addEventListener('click', guardarTecnico);
     });
 
@@ -157,14 +174,15 @@
     }
 
     async function guardarTecnico() {
-        const form = document.getElementById('formTecnico');
+        const formulario = document.getElementById('formTecnico');
 
-        if (!validarFormulario(form)) {
-            mostrarAlerta('Por favor complete todos los campos requeridos', 'warning');
+        // Validar formulario completo con errores específicos
+        if (!validarFormularioCompleto(formulario)) {
+            mostrarAlerta('Por favor corrija los errores en el formulario', 'warning');
             return;
         }
 
-        const formData = new FormData(form);
+        const formData = new FormData(formulario);
         const tecnico = Object.fromEntries(formData.entries());
 
         const btnGuardar = document.getElementById('btnGuardarTecnico');
@@ -179,26 +197,23 @@
                 body: JSON.stringify(tecnico)
             });
 
-            const resultado = await response.json();
-
-            if (!response.ok) {
-                throw new Error(resultado.error || 'Error guardando técnico');
-            }
+            // Usar el manejo mejorado de respuestas
+            const resultado = await manejarRespuestaServidor(response, formulario);
 
             mostrarAlerta(resultado.message, 'success');
 
             // Cerrar modal y resetear formulario
             const modal = bootstrap.Modal.getInstance(document.getElementById('modalTecnico'));
             modal.hide();
-            form.reset();
-            limpiarValidacion(form);
+            formulario.reset();
+            limpiarValidacionCompleta(formulario);
 
             // Recargar lista
             cargarTecnicos();
 
         } catch (error) {
-            console.error('Error:', error);
-            mostrarAlerta('Error guardando técnico: ' + error.message, 'danger');
+            console.error('Error guardando técnico:', error);
+            // El error ya fue mostrado por manejarRespuestaServidor
         } finally {
             mostrarLoading(btnGuardar, false);
         }
@@ -215,9 +230,9 @@
 
     // Limpiar formulario cuando se cierra el modal
     document.getElementById('modalTecnico').addEventListener('hidden.bs.modal', function () {
-        const form = document.getElementById('formTecnico');
-        form.reset();
-        limpiarValidacion(form);
+        const formulario = document.getElementById('formTecnico');
+        formulario.reset();
+        limpiarValidacionCompleta(formulario);
     });
 </script>
 {% endblock %}

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Validaciones - Cafés Marloy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        /* Estilos personalizados copiados del sistema */
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .form-control.is-valid {
+            border-color: #198754;
+            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+        }
+
+        .invalid-feedback {
+            display: block !important;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c2c7;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            font-weight: 500;
+        }
+
+        @keyframes shake {
+            0%, 20%, 40%, 60%, 80% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+        }
+
+        .demo-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">
+            <i class="bi bi-shield-check text-success"></i> 
+            Prueba de Validaciones - Sistema Cafés Marloy
+        </h1>
+
+        <!-- DEMO: Cliente -->
+        <div class="demo-section">
+            <h3><i class="bi bi-people text-primary"></i> Formulario de Cliente</h3>
+            <p class="text-muted">Prueba las validaciones ingresando datos incorrectos:</p>
+            
+            <form id="formCliente" class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="nombre" class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre" required 
+                           placeholder="Ej: Oficina Central"
+                           minlength="2" maxlength="100">
+                    <div class="form-text">Mínimo 2 caracteres, máximo 100</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="correo" class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="correo" name="correo"
+                           placeholder="Ej: oficina@cliente.com"
+                           maxlength="100">
+                    <div class="form-text">Formato válido de email</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="telefono" class="form-label">Teléfono</label>
+                    <input type="tel" class="form-control" id="telefono" name="telefono"
+                           placeholder="Ej: 099123456 o 29001234"
+                           pattern="^(09\d{7}|2\d{7})$">
+                    <div class="form-text">Celular: 09XXXXXXXX o Fijo: 2XXXXXXX</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="direccion" class="form-label">Dirección</label>
+                    <input type="text" class="form-control" id="direccion" name="direccion"
+                           placeholder="Ej: Av. Rivera 1234"
+                           maxlength="150">
+                    <div class="form-text">Opcional, máximo 150 caracteres</div>
+                </div>
+                
+                <div class="col-12">
+                    <button type="button" class="btn btn-primary" onclick="probarCliente()">
+                        <i class="bi bi-check-circle"></i> Probar Validación
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="llenarEjemplo('cliente')">
+                        <i class="bi bi-file-text"></i> Llenar Ejemplo
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="llenarError('cliente')">
+                        <i class="bi bi-exclamation-triangle"></i> Generar Errores
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- DEMO: Técnico -->
+        <div class="demo-section">
+            <h3><i class="bi bi-person-gear text-warning"></i> Formulario de Técnico</h3>
+            <p class="text-muted">Prueba la validación de cédula uruguaya:</p>
+            
+            <form id="formTecnico" class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="ci" class="form-label">Cédula de Identidad *</label>
+                    <input type="text" class="form-control" id="ci" name="ci" required
+                           placeholder="Ej: 12345678 o 1.234.567-8"
+                           minlength="7" maxlength="8">
+                    <div class="form-text">7-8 dígitos numéricos con dígito verificador válido</div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="nombreTec" class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" id="nombreTec" name="nombre" required
+                           placeholder="Ej: Juan"
+                           minlength="2" maxlength="50">
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="apellido" class="form-label">Apellido *</label>
+                    <input type="text" class="form-control" id="apellido" name="apellido" required
+                           placeholder="Ej: Pérez"
+                           minlength="2" maxlength="50">
+                </div>
+                
+                <div class="col-12">
+                    <button type="button" class="btn btn-warning" onclick="probarTecnico()">
+                        <i class="bi bi-check-circle"></i> Probar Validación
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="llenarEjemplo('tecnico')">
+                        <i class="bi bi-file-text"></i> Llenar Ejemplo
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="llenarError('tecnico')">
+                        <i class="bi bi-exclamation-triangle"></i> Generar Errores
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ÁREA DE RESULTADOS -->
+        <div class="demo-section">
+            <h3><i class="bi bi-clipboard-data text-info"></i> Resultados de Validación</h3>
+            <div id="resultados" class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 
+                Usa los botones de arriba para probar las validaciones
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Funciones de validación copiadas del sistema
+        function mostrarErrorCampo(campo, mensaje) {
+            limpiarErrorCampo(campo);
+            campo.classList.add('is-invalid');
+            
+            let errorDiv = campo.parentNode.querySelector('.invalid-feedback');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                campo.parentNode.appendChild(errorDiv);
+            }
+            
+            errorDiv.innerHTML = `<i class="bi bi-exclamation-circle"></i> ${mensaje}`;
+        }
+
+        function limpiarErrorCampo(campo) {
+            campo.classList.remove('is-invalid', 'is-valid');
+            const errorDiv = campo.parentNode.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }
+
+        function mostrarCampoValido(campo) {
+            limpiarErrorCampo(campo);
+            campo.classList.add('is-valid');
+        }
+
+        function validarEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+
+        function validarTelefono(telefono) {
+            const regex = /^(09\d{7}|2\d{7})$/;
+            const limpio = telefono.replace(/[\s\-]/g, '');
+            return regex.test(limpio);
+        }
+
+        function validarCedula(ci) {
+            const limpio = ci.replace(/[\.\-]/g, '');
+            if (limpio.length < 7 || limpio.length > 8 || !/^\d+$/.test(limpio)) {
+                return false;
+            }
+            
+            // Algoritmo de validación de cédula uruguaya (simplificado)
+            let ciCompleta = limpio.length === 7 ? "0" + limpio : limpio;
+            const coeficientes = [2, 9, 8, 7, 6, 3, 4];
+            let suma = 0;
+            
+            for (let i = 0; i < 7; i++) {
+                suma += parseInt(ciCompleta[i]) * coeficientes[i];
+            }
+            
+            const digitoVerificador = (10 - (suma % 10)) % 10;
+            return parseInt(ciCompleta[7]) === digitoVerificador;
+        }
+
+        function probarCliente() {
+            const form = document.getElementById('formCliente');
+            const campos = form.querySelectorAll('input');
+            let errores = [];
+            let validos = 0;
+
+            campos.forEach(campo => {
+                const valor = campo.value.trim();
+                const nombre = campo.name;
+                
+                if (campo.hasAttribute('required') && !valor) {
+                    mostrarErrorCampo(campo, 'Este campo es requerido');
+                    errores.push(`${nombre}: requerido`);
+                } else if (valor) {
+                    if (nombre === 'correo' && !validarEmail(valor)) {
+                        mostrarErrorCampo(campo, 'Formato de email inválido');
+                        errores.push(`${nombre}: formato inválido`);
+                    } else if (nombre === 'telefono' && !validarTelefono(valor)) {
+                        mostrarErrorCampo(campo, 'Teléfono debe ser celular (09XXXXXXXX) o fijo (2XXXXXXX)');
+                        errores.push(`${nombre}: formato inválido`);
+                    } else if (nombre === 'nombre' && valor.length < 2) {
+                        mostrarErrorCampo(campo, 'Nombre debe tener al menos 2 caracteres');
+                        errores.push(`${nombre}: muy corto`);
+                    } else {
+                        mostrarCampoValido(campo);
+                        validos++;
+                    }
+                } else {
+                    limpiarErrorCampo(campo);
+                    validos++;
+                }
+            });
+
+            mostrarResultado('cliente', errores, validos);
+        }
+
+        function probarTecnico() {
+            const form = document.getElementById('formTecnico');
+            const campos = form.querySelectorAll('input');
+            let errores = [];
+            let validos = 0;
+
+            campos.forEach(campo => {
+                const valor = campo.value.trim();
+                const nombre = campo.name;
+                
+                if (campo.hasAttribute('required') && !valor) {
+                    mostrarErrorCampo(campo, 'Este campo es requerido');
+                    errores.push(`${nombre}: requerido`);
+                } else if (valor) {
+                    if (nombre === 'ci' && !validarCedula(valor)) {
+                        mostrarErrorCampo(campo, 'Cédula inválida - dígito verificador incorrecto');
+                        errores.push(`${nombre}: cédula inválida`);
+                    } else if ((nombre === 'nombre' || nombre === 'apellido') && valor.length < 2) {
+                        mostrarErrorCampo(campo, 'Debe tener al menos 2 caracteres');
+                        errores.push(`${nombre}: muy corto`);
+                    } else {
+                        mostrarCampoValido(campo);
+                        validos++;
+                    }
+                } else {
+                    limpiarErrorCampo(campo);
+                    validos++;
+                }
+            });
+
+            mostrarResultado('tecnico', errores, validos);
+        }
+
+        function mostrarResultado(tipo, errores, validos) {
+            const resultDiv = document.getElementById('resultados');
+            
+            if (errores.length === 0) {
+                resultDiv.className = 'alert alert-success';
+                resultDiv.innerHTML = `
+                    <i class="bi bi-check-circle"></i> 
+                    <strong>¡Validación exitosa!</strong> 
+                    Formulario de ${tipo} válido (${validos} campos correctos)
+                `;
+            } else {
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.innerHTML = `
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    <strong>Errores encontrados:</strong>
+                    <ul class="mb-0 mt-2">
+                        ${errores.map(error => `<li>${error}</li>`).join('')}
+                    </ul>
+                `;
+            }
+        }
+
+        function llenarEjemplo(tipo) {
+            if (tipo === 'cliente') {
+                document.getElementById('nombre').value = 'Oficina Central';
+                document.getElementById('correo').value = 'oficina@cliente.com';
+                document.getElementById('telefono').value = '099123456';
+                document.getElementById('direccion').value = 'Av. Rivera 1234';
+            } else if (tipo === 'tecnico') {
+                document.getElementById('ci').value = '12345674'; // CI válida
+                document.getElementById('nombreTec').value = 'Juan';
+                document.getElementById('apellido').value = 'Pérez';
+            }
+        }
+
+        function llenarError(tipo) {
+            if (tipo === 'cliente') {
+                document.getElementById('nombre').value = 'A'; // Muy corto
+                document.getElementById('correo').value = 'email-invalido'; // Email malo
+                document.getElementById('telefono').value = '123'; // Teléfono malo
+                document.getElementById('direccion').value = 'Dirección válida';
+            } else if (tipo === 'tecnico') {
+                document.getElementById('ci').value = '12345678'; // CI inválida
+                document.getElementById('nombreTec').value = ''; // Vacío
+                document.getElementById('apellido').value = 'P'; // Muy corto
+            }
+        }
+    </script>
+</body>
+</html> 
