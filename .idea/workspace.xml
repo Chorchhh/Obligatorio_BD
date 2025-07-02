@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3a4309aa-a078-4e03-b065-b10a2d5e8c35" name="Changes" comment="Tablas">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend-flask-simple/Ejecutable.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend-flask-simple/Ejecutable.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend-flask-simple/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/backend-flask-simple/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend-flask-simple/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend-flask-simple/app.py" afterDir="false" />
-    </list>
+    <list default="true" id="3a4309aa-a078-4e03-b065-b10a2d5e8c35" name="Changes" comment="Tablas" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

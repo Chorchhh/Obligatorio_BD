@@ -1,5 +1,6 @@
-CREATE DATABASE cafes_marloy_vale;
-USE cafes_marloy_vale;
+DROP DATABASE if exists cafes_marloy;
+CREATE DATABASE cafes_marloy;
+USE cafes_marloy;
 
 CREATE TABLE login (
     correo VARCHAR(100) PRIMARY KEY,
