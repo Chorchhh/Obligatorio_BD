@@ -30,11 +30,6 @@ pip install -r requirements.txt
 
 2. **Configurar la base de datos:**
 
-```bash
-# Importar datos de demo
-mysql -u root -p cafes_marloy_vale < usuarios_demo.sql
-```
-
 3. **Configurar conexión MySQL:**
    Editar las credenciales en `app.py` línea 12-17:
 
@@ -133,6 +128,6 @@ python3 diagnostico.py
 
 ---
 
-**Implementación por**: Jorge Mendez, Felipe Heredia, Valentin Rodríguez 
+**Implementación por**: Jorge Mendez, Felipe Heredia, Valentin Rodríguez
 
-**Curso**: Bases de Datos I - UCU 2025 
+**Curso**: Bases de Datos I - UCU 2025
