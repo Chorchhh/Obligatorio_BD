@@ -46,8 +46,8 @@ Sistema integral de gestión para máquinas de café con interfaz web moderna, f
    ```
    
    Esto creará:
-   - **👑 Administrador**: admin@cafesmarloy.com / 123456
-   - **👤 Usuario**: usuario@cafesmarloy.com / 123456
+   - **👑 Administrador**: admin@cafesmarloy.com / admin123
+   - **👤 Usuario Técnico**: tecnico1@cafesmarloy.com / tecnico123
 
 4. **Ejecutar la aplicación**
    ```bash
