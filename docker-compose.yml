@@ -1,0 +1,129 @@
+# ═══════════════════════════════════════════════════════
+# DOCKER COMPOSE PARA SISTEMA CAFÉS MARLOY
+# ═══════════════════════════════════════════════════════
+version: "3.8"
+
+services:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # SERVICIO DE BASE DE DATOS MYSQL
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  mysql_db:
+    image: mysql:8.0
+    container_name: cafes_marloy_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootroot
+      MYSQL_DATABASE: cafes_marloy
+      MYSQL_USER: flask_user
+      MYSQL_PASSWORD: flask_password
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3306:3306"
+    volumes:
+      # Persistencia de datos
+      - mysql_data:/var/lib/mysql
+      # Script de inicialización
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      # Configuración personalizada
+      - ./docker/mysql/conf:/etc/mysql/conf.d
+    networks:
+      - cafes_marloy_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-prootroot",
+        ]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # SERVICIO DE APLICACIÓN FLASK
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  flask_app:
+    build:
+      context: ./backend-flask-simple
+      dockerfile: Dockerfile
+    container_name: cafes_marloy_app
+    restart: unless-stopped
+    environment:
+      # Configuración de la aplicación
+      FLASK_ENV: production
+      FLASK_DEBUG: 0
+      # Configuración de base de datos
+      DB_HOST: mysql_db
+      DB_PORT: 3306
+      DB_NAME: cafes_marloy
+      DB_USER: flask_user
+      DB_PASSWORD: flask_password
+      DB_ROOT_PASSWORD: rootroot
+      # Configuración del servidor
+      HOST: 0.0.0.0
+      PORT: 5001
+    ports:
+      - "5001:5001"
+    volumes:
+      # Logs de la aplicación
+      - app_logs:/app/logs
+      # Archivos estáticos (desarrollo)
+      - ./backend-flask-simple/static:/app/static
+      - ./backend-flask-simple/templates:/app/templates
+    networks:
+      - cafes_marloy_network
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 30s
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # SERVICIO OPCIONAL: PHPMYADMIN PARA ADMINISTRACIÓN
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2
+    container_name: cafes_marloy_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql_db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootroot
+      MYSQL_ROOT_PASSWORD: rootroot
+    ports:
+      - "8080:80"
+    networks:
+      - cafes_marloy_network
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+
+# ═══════════════════════════════════════════════════════
+# VOLÚMENES PARA PERSISTENCIA DE DATOS
+# ═══════════════════════════════════════════════════════
+volumes:
+  mysql_data:
+    driver: local
+    name: cafes_marloy_mysql_data
+  app_logs:
+    driver: local
+    name: cafes_marloy_app_logs
+
+# ═══════════════════════════════════════════════════════
+# RED PERSONALIZADA PARA COMUNICACIÓN ENTRE SERVICIOS
+# ═══════════════════════════════════════════════════════
+networks:
+  cafes_marloy_network:
+    driver: bridge
+    name: cafes_marloy_network

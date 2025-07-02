@@ -4,11 +4,12 @@ from datetime import datetime
 from functools import wraps
 import re
 import html
+import os
 from decimal import Decimal, InvalidOperation
 
 app = Flask(__name__)
-# Cambiar por una clave secreta segura
-app.secret_key = 'cafes_marloy_secret_key_2025'
+# Configuración de seguridad usando variables de entorno
+app.secret_key = os.getenv("SECRET_KEY", "cafes_marloy_secret_key_2025_CAMBIAR_EN_PRODUCCION")
 
 # ─────────────── SISTEMA DE VALIDACIONES ───────────────
 
@@ -207,13 +208,20 @@ def validar_id_entero(id_valor, nombre_campo):
 
 # ─────────────── CONEXIÓN MYSQL ───────────────
 
-
 def conectar():
+    """Conexión a MySQL usando variables de entorno (Docker-friendly)"""
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="rootroot",
-        database="cafes_marloy"
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", "rootroot"),
+        database=os.getenv("DB_NAME", "cafes_marloy"),
+        charset='utf8mb4',
+        collation='utf8mb4_unicode_ci',
+        autocommit=False,
+        # Configuraciones adicionales para Docker
+        connection_timeout=30,
+        auth_plugin='mysql_native_password'
     )
 
 # ─────────────── AUTENTICACIÓN Y PERMISOS ───────────────
@@ -890,4 +898,13 @@ def api_reporte_clientes_mas_maquinas():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # Configuración para Docker y entornos variables
+    HOST = os.getenv("HOST", "0.0.0.0")
+    PORT = int(os.getenv("PORT", "5001"))
+    DEBUG = os.getenv("FLASK_DEBUG", "0") == "1"
+    
+    print("🚀 Iniciando servidor de Cafés Marloy...")
+    print(f"📊 Dashboard disponible en: http://{HOST}:{PORT}/")
+    print(f"🔑 Endpoints de autenticación: http://{HOST}:{PORT}/login")
+    
+    app.run(debug=DEBUG, host=HOST, port=PORT)
