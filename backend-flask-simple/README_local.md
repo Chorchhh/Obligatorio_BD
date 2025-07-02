@@ -65,8 +65,8 @@ Al acceder al sistema por primera vez, verás la pantalla de login:
 - Ingresa tu correo y contraseña
 - El sistema te redirigirá al dashboard según tu rol
 - Puedes usar las credenciales de demostración:
-  - **Admin**: admin@cafesmarloy.com / 123456
-  - **Usuario**: usuario@cafesmarloy.com / 123456
+  - **Admin**: admin@cafesmarloy.com / admin123
+  - **Usuario Técnico**: tecnico1@cafesmarloy.com / tecnico123
 
 ### 👥 Roles y Permisos
 
