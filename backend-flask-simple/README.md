@@ -17,7 +17,7 @@ Esta es una implementación alternativa del sistema de gestión de Cafés Marloy
 
 - Python 3.7+
 - MySQL Server
-- Base de datos `cafes_marloy_vale` configurada
+- Base de datos `cafes_marloy` configurada
 
 ### Pasos para ejecutar:
 
